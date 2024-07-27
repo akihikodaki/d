@@ -5,7 +5,7 @@ QEMU = qemu-x86_64
 
 .PHONY: clean
 
-obj/d.ndjson: obj/libd.so d index.mjs
+obj/d.jsonl: obj/libd.so d index.mjs
 	$(QEMU) -plugin "$$PWD"/$<,outfile=>(./d > $@) /usr/bin/env true
 
 obj/libd.so: d.c | obj
