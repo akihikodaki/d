@@ -66,5 +66,7 @@ export default async function* generate(iterator) {
         }
     }
 
-    yield insn;
+    if (insn) {
+        yield insn;
+    }
 };
