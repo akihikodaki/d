@@ -3,6 +3,6 @@
 
 import("./index.mjs").then(async ({ default: generate }) => {
     for await (const insn of generate(process.stdin)) {
-        console.log(insn.toString());
+        console.log(JSON.stringify(insn));
     }
 });

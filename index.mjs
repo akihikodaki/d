@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: 0BSD
 
 export class Insn {
-    toString() {
-        const vaddr = this.vaddr.toString(16);
-        const data = this.data.toString(16);
-        const mems = this.mems.map(mem => `{ ${mem} }`).join(", ");
-
-        return `vaddr: 0x${vaddr}, data: 0x${data}, mems: ${mems}`;
+    toJSON() {
+        return {
+            ...this,
+            vaddr: `0x${this.vaddr.toString(16)}`,
+            data: `0x${this.data.toString(16)}`
+        };
     }
 };
 
 export class Mem {
-    toString() {
-        return `vaddr: 0x${this.vaddr.toString(16)}, size: ${this.size}, write: ${this.write}`;
+    toJSON() {
+        return { ...this, vaddr: `0x${this.vaddr.toString(16)}` };
     }
 };
 
