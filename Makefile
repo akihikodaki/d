@@ -5,11 +5,8 @@ QEMU = qemu-x86_64
 
 .PHONY: clean
 
-obj/d.txt: obj/d.bin d
-	./d < $< > $@
-
-obj/d.bin: obj/libd.so | obj
-	$(QEMU) -plugin "$$PWD"/$<,outfile=$@ /usr/bin/env true
+obj/d.txt: obj/libd.so
+	$(QEMU) -plugin "$$PWD"/$<,outfile=>(./d > $@) /usr/bin/env true
 
 obj/libd.so: d.c | obj
 	$(CC) -shared $(CFLAGS) -o $@ $^
