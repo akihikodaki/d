@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: 0BSD
 
-import stream from "node:stream";
-
 export class Insn {
     toString() {
         const vaddr = this.vaddr.toString(16);
@@ -18,62 +16,55 @@ export class Mem {
     }
 };
 
-export default class Transform extends stream.Transform {
-    #buffer = Buffer.alloc(16);
-    #size = 0;
-    #insn;
+export default async function* generate(iterator) {
+    const buffer = Buffer.alloc(16);
+    let size = 0;
+    let insn;
 
-    constructor(options) {
-        super({ ...options, readableObjectMode: true });
-    }
+    for await (const chunk of iterator) {
+        let start = buffer.length - size;
 
-    #consumeBuffer() {
-        const vaddr = this.#buffer.readBigUInt64LE(0);
-        const type = this.#buffer.readUInt32LE(8);
-        const data = this.#buffer.readUInt32LE(12);
+        size += chunk.copy(buffer, size, 0, start);
 
-        switch (type) {
-        case 0:
-            if (this.#insn) {
-                this.push(this.#insn);
+        while (size >= buffer.length) {
+            const vaddr = buffer.readBigUInt64LE(0);
+            const type = buffer.readUInt32LE(8);
+            const data = buffer.readUInt32LE(12);
+    
+            switch (type) {
+            case 0:
+                if (insn) {
+                    yield insn;
+                }
+    
+                insn = new Insn;
+                insn.vaddr = vaddr;
+                insn.data = data;
+                insn.mems = [];
+                break;
+    
+            case 1:
+            case 2:
+                if (!insn) {
+                    throw new Error("MEM before INSN");
+                }
+    
+                const mem = new Mem;
+                mem.vaddr = vaddr;
+                mem.write = type == 2;
+                mem.size = data;
+                insn.mems.push(mem);
+                break;
+    
+            default:
+                throw new Error("unknown type");
             }
 
-            this.#insn = new Insn;
-            this.#insn.vaddr = vaddr;
-            this.#insn.data = data;
-            this.#insn.mems = [];
-            break;
-
-        case 1:
-        case 2:
-            if (!this.#insn) {
-                throw new Error("MEM before INSN");
-            }
-
-            const mem = new Mem;
-            mem.vaddr = vaddr;
-            mem.write = type == 2;
-            mem.size = data;
-            this.#insn.mems.push(mem);
-            break;
-
-        default:
-            throw new Error("unknown type");
+            const end = start + buffer.length;
+            size = chunk.copy(buffer, 0, start, end);
+            start += size;
         }
     }
 
-    _transform(data, encoding, callback) {
-        let start = this.#buffer.length - this.#size;
-
-        this.#size += data.copy(this.#buffer, this.#size, 0, start);
-
-        while (this.#size >= this.#buffer.length) {
-            this.#consumeBuffer();
-            const end = start + this.#buffer.length;
-            this.#size = data.copy(this.#buffer, 0, start, end);
-            start += this.#size;
-        }
-
-        callback();
-    }
+    yield insn;
 };
