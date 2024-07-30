@@ -2,6 +2,7 @@
 
 CFLAGS += -fPIC -O2 -Wall -Wextra -pedantic -std=c11 $(shell pkg-config --cflags glib-2.0)
 QEMU = qemu-x86_64
+SHELL = bash
 
 .PHONY: clean
 
